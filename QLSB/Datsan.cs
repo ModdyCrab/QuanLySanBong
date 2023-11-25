@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Globalization;
 using System.Data.SqlClient;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using System.CodeDom;
 
 namespace QuanLySanBong
 {
@@ -82,14 +84,14 @@ namespace QuanLySanBong
         void LoadCategory1()
         {
             List<Category> listCategory = CategoryDAO.Instance.GetListCategory();
-            comboBox1.DataSource = listCategory;
-            comboBox1.DisplayMember = "TenLoaiDV";
+            cbLoaiDV.DataSource = listCategory;
+            cbLoaiDV.DisplayMember = "TenLoaiDV";
         }
         void GetDVByCategoryID(int id)
         {
             List<DV> listDV = DVDAO.Instance.GetDVByCategoryID(id);
-            comboBox2.DataSource = listDV;
-            comboBox2.DisplayMember = "TenDV";
+            cbDV.DataSource = listDV;
+            cbDV.DisplayMember = "TenDV";
         }
 
 
@@ -211,7 +213,9 @@ namespace QuanLySanBong
         {
             if (loginAccount != null)
             {
+                var check = loginAccount.DisplayName;
                 layDS(loginAccount.UserName);
+                
             }
         }
         public void layDS(string userName)
@@ -220,9 +224,24 @@ namespace QuanLySanBong
             {
                 using (SqlConnection Cnn = new SqlConnection(connectionString))
                 {
-                    string query = "SELECT a.ID_HoaDon, e.ID_KVSB, e.Ten, e.GiaTien, c.TenDV, c.GiaTienDV, b.SoLuong, c.GiaTienDV * b.SoLuong + e.GiaTien AS TongTien, a.NgayLapBill, a.NgayXuatBill " +
-                                   "FROM dbo.HoaDon AS a, dbo.ChiTietHoaDon AS b, dbo.DV AS c, dbo.ChiTietLichDat_SanBong AS d, dbo.KhuVuc_SanBong AS e, dbo.Account AS acc " +
-                                   "WHERE a.ID_HoaDon = b.ID_HoaDon AND b.ID_DV = c.ID_DV AND a.ID_CTLDSB = d.ID_CTLDSB AND d.ID_KVSB = e.ID_KVSB AND acc.Username = @UserName";
+                    //string query = "SELECT a.ID_HoaDon, e.ID_KVSB, e.Ten, e.GiaTien, c.TenDV, c.GiaTienDV, b.SoLuong, c.GiaTienDV * b.SoLuong + e.GiaTien AS TongTien, a.NgayLapBill, a.NgayXuatBill " +
+                    //               "FROM dbo.HoaDon AS a, dbo.ChiTietHoaDon AS b, dbo.DV AS c, dbo.ChiTietLichDat_SanBong AS d, dbo.KhuVuc_SanBong AS e, dbo.Account AS acc " +
+                    //               "WHERE a.ID_HoaDon = b.ID_HoaDon AND b.ID_DV = c.ID_DV AND a.ID_CTLDSB = d.ID_CTLDSB AND d.ID_KVSB = e.ID_KVSB AND acc.Username = @UserName";
+
+                    string query = @"
+                    SELECT DISTINCT kh.HoTen, kh.SDT, hd.NgayLapBill, hd.NgayXuatBill, dv.TenDV, 
+                    dv.GiaTienDV, cthd.SoLuong, hd.GiamGia,
+                    (dv.GiaTienDV * cthd.SoLuong + kvsb.GiaTien) -
+                    ((dv.GiaTienDV * cthd.SoLuong + kvsb.GiaTien) * hd.GiamGia / 100) AS TongTien
+                    FROM HoaDon hd, ChiTietHoaDon cthd, LichDat_SanBong LDSB, ChiTietLichDat_SanBong ctldsb, 
+                    KhuVuc_SanBong kvsb, DV dv, LoaiDV ldv, KhachHang kh,Account acc
+                    WHERE dv.ID_LDV = ldv.ID_LDV
+                    AND dv.ID_DV = cthd.ID_DV
+                    AND cthd.ID_HoaDon = hd.ID_HoaDon
+                    AND hd.ID_KH = kh.ID_KH
+                    AND hd.ID_CTLDSB = ctldsb.ID_CTLDSB
+                    AND ctldsb.ID_KVSB = kvsb.ID_KVSB
+                    AND acc.Username = @UserName";
 
                     using (SqlCommand Cmd = new SqlCommand(query, Cnn))
                     {
@@ -246,6 +265,11 @@ namespace QuanLySanBong
         }
 
         private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
+        {
+
+        }
+
+        private void soLgDV_ValueChanged(object sender, EventArgs e)
         {
 
         }
